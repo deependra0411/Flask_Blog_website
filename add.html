@@ -1,0 +1,81 @@
+{% extends "layout.html" %}
+{% block body %}
+<!-- Page Header-->
+<header class="masthead"
+    style="background-image:  url('{{ url_for('static', filename='assets/img/add-bg.jpg') }}')">
+    <div class="container position-relative px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <div class="page-heading">
+                    <h1>Add Post/s</h1>
+                    <span class="subheading">What to add New Post</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<ul class="flashes"
+    style="list-style: none; padding: 0; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 5vh;">
+    {% for message in messages %}
+    <li style="color: {{para['flash_color']}};">{{ message }}</li>
+    {% endfor %}
+</ul>
+<script>
+    // Automatically close the message after below mentioned seconds
+    setTimeout(function () {
+        var messageList = document.querySelector('.flashes');
+        if (messageList) {
+            messageList.style.display = 'none';
+        }
+    }, {{ para['flas_time'] }});  //in milliseconds 
+</script>
+{% endif %}
+{% endwith %}
+<!-- Main Content-->
+<main class="mb-4">
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <p>Fill details below! </p>
+                <div class="my-5">
+                    <form method="POST" action="/add">
+                        <div class="form-floating">
+                            <input class="form-control" id="title" name="title" type="text" placeholder="Enter your Title...">
+                            <label for="title">Title</label>
+                            <div class="invalid-feedback" data-sb-feedback="title:required">A Title is required.</div>
+                        </div>
+                        <div class="form-floating">
+                            <input class="form-control" id="tagline" name="tagline" type="text" placeholder="Enter your Tagline...">
+                            <label for="tagline">Tagline</label>
+                            <div class="invalid-feedback" data-sb-feedback="tagline:required">An Tagline is required.
+                            </div>
+
+                        </div>
+                        <div class="form-floating">
+                            <input class="form-control" id="slug" name="slug" type="text" placeholder="Enter slug...">
+                            <label for="slug">Slug</label>
+                            <div class="invalid-feedback" data-sb-feedback="slug:required">A slug is mandatory and must
+                                be unique.
+                            </div>
+                        </div>
+                        <div class="form-floating">
+                            <textarea class="form-control" id="content" name="content" placeholder="Enter your content..."
+                                style="height: 12rem"></textarea>
+                            <label for="content">Content</label>
+                            <div class="invalid-feedback" data-sb-feedback="content:required">A content is required.
+                            </div>
+                        </div>
+                        <div class="form-floating">
+                            <input class="form-control" id="img_file" name="image" type="text" placeholder="Enter Imagefile source...">
+                            <label for="image">Imagefile</label>
+
+                        </div>
+                        <br />
+                        <!-- Submit Button-->
+                        <button class="btn btn-primary " id="submitButton" type="submit">Submit</button>
+                    </form>
+
+
+                    {% endblock %}

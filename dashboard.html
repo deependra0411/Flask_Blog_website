@@ -1,0 +1,107 @@
+{% extends "layout.html" %}
+{% block body %}
+
+<!-- Page Header-->
+<header class="masthead" style="background-image:  url('{{ url_for('static', filename='assets/img/post-bg.jpg') }}')">
+    <div class="container position-relative px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <div class="post-heading">
+                    <h1>Post/s Manipulation</h1>
+                </div>
+                <div class="post-subheading">
+                    <h1>Edit, Delete or Add </h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<ul class="flashes"
+    style="list-style: none; padding: 0; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 5vh;">
+    {% for message in messages %}
+    <li style="color: {{para['flash_color']}};">{{ message }}</li>
+    {% endfor %}
+</ul>
+<script>
+    // Automatically close the error alert after mentioned seconds
+    setTimeout(function () {
+        var messageList = document.querySelector('.flashes');
+        if (messageList) {
+            messageList.style.display = 'none';
+        }
+    }, {{ para['flas_time'] }});  //in milliseconds 
+</script>
+{% endif %}
+{% endwith %}
+
+<!-- Post Content-->
+<article class="mb-4">
+    <div class="container px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-12">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">sno</th>
+                                <th scope="col">title</th>
+                                <th scope="col">tagline</th>
+                                <th scope="col">slug</th>
+                                <th scope="col">content</th>
+                                <th scope="col">img_file</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for post in posts %}
+                            <tr>
+                                <th scope="row">{{post.sno}}</th>
+                                <td>{{post.title}}</td>
+                                <td>{{post.tagline}}</td>
+                                <td>{{post.slug}}</td>
+                                <td>{{post.content}}</td>
+                                <td>{{post.img_file}}</td>
+                                <td>
+                                    <a href="/edit/{{post.slug}}"><button type="button"
+                                            class="btn btn-outline-primary btn-sm">Edit</button></a>
+                                    <a href="/delete/{{post.slug}}"><button type="button"
+                                            class="btn btn-outline-danger btn-sm">Delete</button></a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-12 col-md-4 mb-2 mb-md-0">
+                        <a href="/add"><button type="button" class="btn btn-outline-primary btn-block">Add New Post</button></a>
+                    </div>
+                    <div class="col-12 col-md-4 mb-2 mb-md-0">
+                        <form action="/uploader" method="POST" enctype="multipart/form-data">
+                            <div class="input-group">
+                                <input type="file" name='file1' class="form-control">
+                                <div class="input-group-append">
+                                    <button type="submit" class="btn btn-outline-primary" id="uploadButton">Upload</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="col-12 col-md-4 ">
+                        <a href="/logout"><button type="button" class="btn btn-outline-danger btn-block">Logout</button></a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</article>
+
+</body>
+
+</html>
+{% endblock %}
