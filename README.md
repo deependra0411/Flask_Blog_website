@@ -1,4 +1,4 @@
-Flask Blog Website
+Flask Blog Website.
 
 Flask Blog Website is a web application built using Flask,a Python web framework.This project provides a platform for managing blog posts,integrating several key features:
 
