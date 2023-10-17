@@ -155,10 +155,12 @@
 
       <div class="form-floating">
         <input type="email" class="form-control" id="floatingInput" name=email_id placeholder="name@example.com">
+        <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
         <label for="floatingInput">Email address</label>
       </div>
       <div class="form-floating">
         <input type="password" class="form-control" id="floatingPassword" name=email_pass placeholder="Password">
+        <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" /> 
         <label for="floatingPassword">Password</label>
       </div>
 
@@ -169,6 +171,7 @@
         </label>
       </div>
       <button class="btn btn-primary w-100 py-2" type="submit">Sign in</button>
+      <a href=/singup>Don't have account?Sing up here</a>
       <p class="mt-5 mb-3 text-body-secondary">&copy;{{para['Blog_name']}} 2017–2023</p>
     </form>
   </main>
