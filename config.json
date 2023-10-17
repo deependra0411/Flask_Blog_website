@@ -5,18 +5,18 @@
         
         "Blog_name":"Python Coders",
         "Blog_title":"Start learnig today",
-        "local_uri":"mysql://root:admin123@localhost/pythoncoders",
+        "local_uri":"mysql://",
         "img_file":"assets/img/home-bg.jpg",
-        "Bloger_name":"Adam",
-        "user":"user@pythoncoders.com",
-        "pass":"pass",
+        "user":"admin@pythoncoders.com",
         "upload_location": "D:\\PYTHON MODULES\\FLASK\\startbootstrap-clean-blog-gh-pages\\static\\assets\\img",
-        "no_of_post":2,
+        "no_of_post":3,
         "tw_url":"https://twitter.com/",
         "fb_url":"https://www.facebook.com/",
         "gt_url":"https://github.com/",
         "flas_time":3000,
-        "flash_color":"blue"
+        "flash_color":"blue",
+        "csrf_secret_key":"b_53oi3uriq9pifpff;apl",
+        "secret_key":"super-secret-key"
     }
 
 }
