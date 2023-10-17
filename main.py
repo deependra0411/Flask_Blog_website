@@ -1,7 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for,session,flash
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf import CSRFProtect
 from datetime import datetime
 import math
+from flask_bcrypt import Bcrypt 
 import os
 from werkzeug.utils import secure_filename
 import json
@@ -12,13 +14,23 @@ with open ('config.json','rt') as f:     # reading json file.
 
 app=Flask(__name__)  # Object instatntiation
 
-app.secret_key='super-secret-key'  # Secret key for session.
+app.secret_key=para['secret_key']  # Secret key for sessions.
 
-app.config['SQLALCHEMY_DATABASE_URI'] = para['local_uri']    # Connecting to database.
+app.WTF_CSRF_SECRET_KEY=para['csrf_secret_key']   # Form protection
 
-app.config['upload_folder'] = para['upload_location']    # config upload folder.
+app.config['SQLALCHEMY_DATABASE_URI'] = para['local_uri']    
 
-db = SQLAlchemy(app)   # db as an instance of object sqlAlchemy database object.
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024      # Max content size of upload
+
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'}  # Allowed extension for file uploading
+
+app.config['UPLOAD_FOLDER'] = para['upload_location']    # config upload folder.
+
+csrf = CSRFProtect(app)     
+
+bcrypt = Bcrypt(app)  
+
+db = SQLAlchemy(app)   
 
 class POSTS(db.Model):
     sno = db.Column(db.Integer,primary_key=True,unique=True)
@@ -28,6 +40,8 @@ class POSTS(db.Model):
     content = db.Column(db.Text)
     img_file = db.Column(db.String(100))
     date = db.Column(db.DateTime, default=datetime.now())
+    UserID=db.Column(db.String(255),unique=True,nullable=False)
+    author=db.Column(db.String(255),nullable=False)
 
 class CONTACT(db.Model):
     sno = db.Column(db.Integer,primary_key=True,unique=True)
@@ -36,14 +50,49 @@ class CONTACT(db.Model):
     phone = db.Column(db.String(200))
     message = db.Column(db.Text)
     date = db.Column(db.DateTime, default=datetime.now())
-  
 
-@app.route('/',methods=['GET','POST'])      # Decorator for Home Page
+class Users(db.Model):
+    id=db.Column(db.Integer,primary_key=True)
+    name=db.Column(db.String(200),nullable=False)
+    userid=db.Column(db.String(200),unique=True,nullable=False)
+    password=db.Column(db.String(200),nullable=False)
+
+def allowed_file(filename):                                # function to define aloowed extensions
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+   
+@app.route('/singup',methods=['GET','POST'])        #Singup Route
+def singup():
+    if request.method=="POST":
+        try:
+            name=request.form.get('Name')
+            email=request.form.get('email_id')
+            password=request.form.get('email_pass') 
+
+            entry=Users(
+                name=name,
+                userid = email,
+                password = bcrypt.generate_password_hash (password).decode('utf-8') 
+                )
+            db.session.add(entry)
+            db.session.commit()
+            flash('User registered successfully','success')
+            return redirect(url_for('login'))
+        except Exception:
+            flash('All fileds are mandatory', 'error')
+            db.session.rollback()
+            return redirect(url_for('singup'))
+        finally:
+            db.session.close()
+
+    return render_template('singup.html',para=para)
+
+@app.route('/',methods=['GET','POST'])      # Home Page with paginiation
 def home():
     posts=POSTS.query.filter_by().all()
     last =math.ceil(len(posts)/para['no_of_post'])
-    page=request.args.get('page')
-    if(not str(page).isnumeric()):
+    page=request.args.get('page')  # Getting page from URL
+    if(not str(page).isnumeric()): # if nothing in the URL then setting the page to 1
         page=1
     page=int(page)
     posts=posts[(page-1)*int(para['no_of_post']) : (page-1)*int(para['no_of_post'])+int(para['no_of_post'])]
@@ -59,13 +108,18 @@ def home():
     
     return render_template('index.html',para=para,posts=posts,prev=prev,next=next)
 
-@app.route('/uploader',methods=['GET','POST'])                          # Uploader 
+@app.route('/uploader', methods=['GET', 'POST'])         # uploader
 def uploader():
-    if 'user' in session and session['user'] == para['user']:
-        f = request.files['file1']
+    if 'user' in session:
+        f = request.files.getlist('file1')
         if f:
             try:
-                f.save(os.path.join(app.config['upload_folder'], secure_filename(f.filename)))
+                for g in f:
+                    if allowed_file(g.filename):
+                        g.save(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(g.filename)))
+                    else:
+                        flash('Invalid file type', 'error')
+                        return redirect(request.url)
                 flash('File uploaded successfully', 'success')
                 return redirect(url_for('dashboard'))
             except Exception as e:
@@ -74,8 +128,9 @@ def uploader():
             flash('No file selected', 'error')
     else:
         flash('Unauthorized access', 'error')
-    
+
     return redirect(url_for('dashboard'))
+
 
 @app.route('/contact',methods=['POST','GET'])                       # Contact
 def contact():
@@ -100,8 +155,12 @@ def contact():
 
 @app.route('/dashboard')
 def dashboard():
-    if ('user' in session and session['user']==para['user'] ):
-        posts=POSTS.query.filter_by().all()
+    if ('user' in session  ):
+        if session['user']==para['user']:
+            posts=POSTS.query.filter_by().all()
+            return render_template('dashboard.html',para=para,posts=posts)
+
+        posts=POSTS.query.filter_by(UserID=session['user']).all()
         return render_template('dashboard.html',para=para,posts=posts)
     else:
         return redirect(url_for('login'))
@@ -112,20 +171,31 @@ def logout():
     flash('Logout successful!', 'success')
     return redirect(url_for('dashboard'))
     
-@app.route('/login' ,methods=['GET','POST'])                                       # Login page
+@app.route('/login' ,methods=['GET','POST'])          # Login page
 def login():
-    if ('user' in session and session['user']==para['user'] ):
+    if ('user' in session ):
         return redirect(url_for('dashboard'))
 
     if request.method=="POST":
-        email_address = request.form.get("email_id")
-        password = request.form.get("email_pass")
-        if email_address == para['user'] and password == para['pass']:
-            session['user'] = email_address
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Login failed. Invalid credentials.', 'danger')
-            return redirect(url_for('login'))
+        try:
+            email_address = request.form.get("email_id")
+            password = request.form.get("email_pass")
+            user=Users.query.filter_by(userid=email_address).first()    
+
+            is_valid = bcrypt.check_password_hash(user.password, password) 
+
+            if email_address == user.userid and is_valid:
+                session['user'] = user.userid
+                # return f"Password: {password}<br>Hashed Password:{user.password}<br>Is Valid: {is_valid}<br>userid:{email_address}<br>session_user:{[session['user']]}"
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Login failed. Invalid credentials.', 'danger')
+                return redirect(url_for('login'))
+        except Exception:
+            flash('No user exists','danger')
+            return redirect(url_for('singup'))
+            
+
     return render_template('login.html',para=para)
 
 @app.route('/about')                                             # About page
@@ -139,7 +209,7 @@ def post(post_slug):
 
 @app.route('/delete/<string:post_slug>',methods=['POST','GET'])        # For Deleting selected post.
 def delete(post_slug):
-    if ('user' in session and session['user']==para['user'] ):
+    if ('user' in session  ):
         post=POSTS.query.filter_by(slug=post_slug).first()
         db.session.delete(post)
         db.session.commit()
@@ -148,9 +218,9 @@ def delete(post_slug):
     else:
         return redirect(url_for('login'))
 
-@app.route('/edit/<string:post_slug>',methods=['POST','GET'])     # Editing Post
+@app.route('/edit/<string:post_slug>',methods=['POST','GET'])     # Editing selected Post
 def edit(post_slug):
-    if ('user' in session and session['user']==para['user'] ):
+    if ('user' in session  ):
         post=POSTS.query.filter_by(slug=post_slug).first()
         if request.method=='POST':
             
@@ -177,7 +247,8 @@ def edit(post_slug):
 
 @app.route('/add',methods=['POST','GET'])     # Adding New Post
 def add():
-    if ('user' in session and session['user']==para['user'] ):
+    if ('user' in session  ):
+        user=Users.query.filter_by(userid=session['user']).first() 
         if request.method=="POST":
             try:
                 title=request.form.get('title')
@@ -185,13 +256,17 @@ def add():
                 slug=request.form.get('slug')
                 content=request.form.get('content')
                 img_file=request.form.get('image')
+                UID=session['user']
+                Author=user.name
                 entry=POSTS(
                     title=title,
                     tagline=tagline,
                     slug=slug,
                     content=content,
                     img_file=img_file,
-                    date=datetime.now()
+                    date=datetime.now(),
+                    UserID=UID,
+                    author=Author
                 )
                 db.session.add(entry)
                 db.session.commit()
@@ -207,6 +282,8 @@ def add():
         return render_template('add.html',para=para)
     else:
         return redirect(url_for('login'))
+    
+
 
 if __name__=='__main__':
     app.run(debug=True)
