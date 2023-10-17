@@ -23,11 +23,11 @@
     {% endfor %}
 </ul>
 <script>
-     // Automatically close the message after below mentioned seconds
+    // Automatically close the message after below mentioned seconds
     setTimeout(function () {
         var messageList = document.querySelector('.flashes');
         if (messageList) {
-            messageList.style.display = 'none';
+            messageList.style display = 'none';
         }
     }, {{ para['flas_time'] }});  //in milliseconds 
 </script>
@@ -42,40 +42,67 @@
                 <div class="my-5">
                     <form method="POST" action="/edit/{{post.slug}}">
                         <div class="form-floating">
-                            <input class="form-control" id="title" name="title" value= "{{ post.title }}" type="text" placeholder="Enter your Title...">
+                            <input class="form-control" id="title" name="title" value="{{ post.title }}" type="text"
+                                placeholder="Enter your Title...">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                             <label for="title">Title</label>
                             <div class="invalid-feedback" data-sb-feedback="title:required">A Title is required.</div>
                         </div>
                         <div class="form-floating">
-                            <input class="form-control" id="tagline" name="tagline" value= "{{ post.tagline }}" type="text" placeholder="Enter your Tagline...">
+                            <input class="form-control" id="tagline" name="tagline" value="{{ post.tagline }}"
+                                type="text" placeholder="Enter your Tagline...">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                             <label for="tagline">Tagline</label>
                             <div class="invalid-feedback" data-sb-feedback="tagline:required">An Tagline is required.
                             </div>
 
                         </div>
                         <div class="form-floating">
-                            <input class="form-control" id="slug" name="slug" value= "{{ post.slug }}" type="text" placeholder="Enter slug...">
+                            <input class="form-control" id="slug" name="slug" value="{{ post.slug }}" type="text"
+                                placeholder="Enter slug...">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                             <label for="slug">Slug</label>
                             <div class="invalid-feedback" data-sb-feedback="slug:required">A slug is mandatory and must
                                 be unique.
                             </div>
                         </div>
+
                         <div class="form-floating">
-                            <textarea class="form-control" id="content" name="content"   placeholder="Enter your content..."
-                                style="height: 12rem">{{ post.content }}</textarea>
-                            <label for="content">Content</label>
-                            <div class="invalid-feedback" data-sb-feedback="content:required">A content is required.
-                            </div>
+                            <div id="editor-container" style="height: 300px;"></div>
+                            <textarea class="form-control" id="content" name="content"
+                                style="display: none;"></textarea>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         </div>
-                        <div class="form-floating">
-                            <input class="form-control" id="img_file" name="image" value= "{{post.img_file}}" type="text" placeholder="Enter Imagefile source...">
-                            <label for="image">Imagefile</label>
+                </div>
 
-                        </div>
-                        <br />
-                        <!-- Submit Button-->
-                        <button class="btn btn-primary " id="submitButton" type="submit">Submit</button>
-                    </form>
+                <div class="form-floating">
+                    <input class="form-control" id="img_file" name="image" value="{{post.img_file}}" type="text"
+                        placeholder="Enter Imagefile source...">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <label for="image">Imagefile</label>
 
+                </div>
+                <br />
+                <!-- Submit Button-->
+                <button class="btn btn-primary " id="submitButton" type="submit">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    </div>
+</main>
 
-                    {% endblock %}
+<!-- Include Quill.js library -->
+<link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<script>
+    var quill = new Quill('#editor-container', {
+        theme: 'snow',
+    });
+    quill.root.innerHTML = '{{ post.content|safe }}';
+    quill.on('text-change', function () {
+        var content = document.querySelector('#content');
+        content.value = quill.root.innerHTML;
+    });
+</script>
+{% endblock %}
