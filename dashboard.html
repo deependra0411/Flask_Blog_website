@@ -16,7 +16,6 @@
         </div>
     </div>
 </header>
-
 {% with messages = get_flashed_messages() %}
 {% if messages %}
 <ul class="flashes"
@@ -63,7 +62,7 @@
                                 <td>{{post.title}}</td>
                                 <td>{{post.tagline}}</td>
                                 <td>{{post.slug}}</td>
-                                <td>{{post.content}}</td>
+                                <td>{{post.content|safe}}</td>
                                 <td>{{post.img_file}}</td>
                                 <td>
                                     <a href="/edit/{{post.slug}}"><button type="button"
@@ -84,7 +83,8 @@
                     <div class="col-12 col-md-4 mb-2 mb-md-0">
                         <form action="/uploader" method="POST" enctype="multipart/form-data">
                             <div class="input-group">
-                                <input type="file" name='file1' class="form-control">
+                                <input type="file" name='file1' multiple  class="form-control">
+                                <input type="hidden" name="csrf_token" value = "{{ csrf_token() }}" />
                                 <div class="input-group-append">
                                     <button type="submit" class="btn btn-outline-primary" id="uploadButton">Upload</button>
                                 </div>
